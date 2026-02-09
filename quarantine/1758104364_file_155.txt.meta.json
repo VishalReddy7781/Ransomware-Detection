@@ -1,0 +1,7 @@
+{
+  "original_path": "D:\\3RD year\\file_155.txt",
+  "quarantine_path": "./quarantine\\1758104364_file_155.txt",
+  "sha256": "e153c0d28250288e8b08c6ff9fc28c33b54c3644a14ea3a6094816eeb9c94241",
+  "timestamp": 1758104364.146197,
+  "reason": "high_write_rate"
+}

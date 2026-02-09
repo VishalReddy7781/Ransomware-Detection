@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ransomware Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(30, 41, 59, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .status-pulse {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 1);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .severity-high { color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .severity-medium { color: #fbbf24; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .severity-low { color: #60a5fa; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); }
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-6 md:p-10">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600/20 p-2 rounded-lg border border-blue-500/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold tracking-tight text-white">    <span class="text-blue-500">Ransomware Detector</span></h1>
+                </div>
+               
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex items-center gap-3 bg-slate-800/80 px-4 py-2.5 rounded-2xl border border-slate-700/50 shadow-xl">
+                    <div class="status-pulse"></div>
+                    <span class="text-sm font-semibold tracking-wide">SYSTEM SHIELD ACTIVE</span>
+                </div>
+                <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 p-2.5 rounded-xl transition-all border border-slate-700 group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div class="glass-card p-6 border-b-4 border-b-blue-500">
+                <p class="text-slate-400 text-xs uppercase tracking-widest font-bold">Total Scanned</p>
+                <h2 class="text-4xl font-extrabold mt-3 tracking-tight" id="total-alerts">12,842</h2>
+            </div>
+            <div class="glass-card p-6 border-b-4 border-b-red-500">
+                <p class="text-slate-400 text-xs uppercase tracking-widest font-bold">Threats Blocked</p>
+                <h2 class="text-4xl font-extrabold mt-3 tracking-tight text-red-400" id="high-alerts">14</h2>
+                <span class="inline-block mt-2 text-[10px] font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded uppercase">Immediate Action</span>
+            </div>
+            <div class="glass-card p-6 border-b-4 border-b-amber-500">
+                <p class="text-slate-400 text-xs uppercase tracking-widest font-bold">Suspicious</p>
+                <h2 class="text-4xl font-extrabold mt-3 tracking-tight text-amber-400" id="medium-alerts">8</h2>
+                <span class="inline-block mt-2 text-[10px] font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded uppercase">Under Observation</span>
+            </div>
+            <div class="glass-card p-6 border-b-4 border-b-green-500">
+                <p class="text-slate-400 text-xs uppercase tracking-widest font-bold">System Health</p>
+                <h2 class="text-4xl font-extrabold mt-3 tracking-tight text-green-400" id="system-health-text">99.2%</h2>
+                <div class="w-full bg-slate-700/50 h-1.5 mt-4 rounded-full overflow-hidden">
+                    <div class="bg-green-500 h-full rounded-full transition-all duration-1000" id="health-bar" style="width: 99%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+            <div class="lg:col-span-2 glass-card p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        <span class="w-2 h-2 bg-red-500 rounded-full"></span> Threat Activity (24h)
+                    </h3>
+                </div>
+                <div style="height: 320px;">
+                    <canvas id="threatChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-8">
+                <h3 class="text-lg font-bold mb-6">Security Advisory</h3>
+                <div class="space-y-5">
+                    <div class="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/20">
+                        <p class="text-sm font-bold text-blue-400 mb-1">Regular Backups</p>
+                        <p class="text-xs text-slate-400 leading-relaxed">Last off-site sync: 2 hours ago. Immutable storage enabled.</p>
+                    </div>
+                    <div class="p-4 bg-amber-500/5 rounded-2xl border border-amber-500/20">
+                        <p class="text-sm font-bold text-amber-400 mb-1">Heuristic Sensitivity</p>
+                        <p class="text-xs text-slate-400 leading-relaxed">Set to "High". Monitoring crypto-API calls and mass renames.</p>
+                    </div>
+                    <div class="p-4 bg-red-500/5 rounded-2xl border border-red-500/20">
+                        <p class="text-sm font-bold text-red-400 mb-1">RDP Hardening</p>
+                        <p class="text-xs text-slate-400 leading-relaxed">3 failed login attempts from IP 192.168.1.45 blocked.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6 mb-10 bg-gradient-to-r from-slate-800/40 to-transparent">
+            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Real-time Attack Timeline (Last 60s)</h3>
+            <div id="timeline" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+            <div class="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4 w-full sm:w-auto">
+                    <h3 class="text-lg font-bold whitespace-nowrap">Detection Logs</h3>
+                    <div class="relative w-full max-w-xs">
+                        <input type="text" id="searchBox" placeholder="Search logs..." 
+                        class="w-full bg-slate-900/50 border border-slate-700 text-slate-200 text-sm rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                </div>
+                <button onclick="window.location='/api/export/csv'"
+                class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95">
+                    Export CSV
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-800/30 text-slate-400 text-[11px] uppercase tracking-widest">
+                            <th class="px-8 py-5 font-bold">Timestamp</th>
+                            <th class="px-8 py-5 font-bold">Affected Object</th>
+                            <th class="px-8 py-5 font-bold">Process Identity</th>
+                            <th class="px-8 py-5 font-bold text-center">Severity</th>
+                            <th class="px-8 py-5 font-bold">Detection Logic</th>
+                            <th class="px-8 py-5 font-bold text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-white/5" id="log-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        
+    </div>
+
+    <script>
+        // Restoring and maintaining your existing JS logic
+        const logBody = document.getElementById("log-body");
+        let threatChart = null;
+
+        function severityClass(level) {
+            if (level === "HIGH") return "severity-high";
+            if (level === "MEDIUM") return "severity-medium";
+            return "severity-low";
+        }
+
+        function updateTimeline(logs) {
+            const timeline = document.getElementById("timeline");
+            timeline.innerHTML = "";
+            const now = Date.now();
+
+            logs.forEach(l => {
+                const t = new Date(l.time).getTime();
+                if (now - t < 60000) {
+                    const dot = document.createElement("div");
+                    dot.className = "timeline-dot shadow-lg";
+                    if (l.severity === "HIGH") {
+                        dot.style.background = "#ef4444";
+                        dot.style.boxShadow = "0 0 8px #ef4444";
+                    }
+                    else if (l.severity === "MEDIUM") {
+                        dot.style.background = "#f59e0b";
+                        dot.style.boxShadow = "0 0 8px #f59e0b";
+                    }
+                    else {
+                        dot.style.background = "#3b82f6";
+                        dot.style.boxShadow = "0 0 8px #3b82f6";
+                    }
+                    timeline.appendChild(dot);
+                }
+            });
+        }
+
+        async function loadDashboard() {
+            try {
+                const res = await fetch("/api/dashboard");
+                const data = await res.json();
+
+                // Top Stats
+                document.getElementById("total-alerts").innerText = data.stats.total_scanned.toLocaleString();
+                document.getElementById("high-alerts").innerText = data.stats.threats_blocked;
+                document.getElementById("medium-alerts").innerText = data.stats.suspicious;
+
+                // Health
+                const health = data.stats.system_health;
+                document.getElementById("health-bar").style.width = health + "%";
+                document.getElementById("system-health-text").innerText = health + "%";
+
+                // Update Timeline
+                updateTimeline(data.logs);
+
+                // Logs Table & Search
+                const searchValue = document.getElementById("searchBox").value.toLowerCase();
+                logBody.innerHTML = "";
+
+                data.logs.slice().reverse().forEach(log => {
+                    const searchable = `${log.time} ${log.file} ${log.process} ${log.severity} ${log.action}`.toLowerCase();
+                    if (searchValue && !searchable.includes(searchValue)) return;
+
+                    const row = `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-8 py-5 text-slate-400 font-mono text-xs">${log.time}</td>
+                        <td class="px-8 py-5 font-semibold text-slate-200">${log.file}</td>
+                        <td class="px-8 py-5 text-slate-400 font-mono text-xs">${log.process}</td>
+                        <td class="px-8 py-5 text-center">
+                            <span class="px-3 py-1 rounded-lg text-[10px] font-extrabold ${severityClass(log.severity)}">
+                                ${log.severity}
+                            </span>
+                        </td>
+                        <td class="px-8 py-5">
+                            <ul class="text-[11px] text-slate-400 space-y-1">
+                                ${log.reasons.map(r => `<li class="flex items-center gap-2"><span class="w-1 h-1 bg-slate-600 rounded-full"></span>${r}</li>`).join("")}
+                            </ul>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <span class="text-xs font-bold text-red-400 bg-red-400/10 px-2 py-1 rounded">
+                                ${log.action}
+                            </span>
+                        </td>
+                    </tr>`;
+                    logBody.insertAdjacentHTML("beforeend", row);
+                });
+
+                // Chart
+                const hours = {};
+                data.logs.forEach(l => {
+                    const h = new Date(l.time).getHours();
+                    hours[h] = (hours[h] || 0) + 1;
+                });
+
+                const labels = Object.keys(hours).map(h => h + ":00");
+                const values = Object.values(hours);
+
+                const ctx = document.getElementById("threatChart").getContext("2d");
+                if (threatChart) threatChart.destroy();
+
+                threatChart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: "Detection Events",
+                            data: values,
+                            borderColor: "#3b82f6",
+                            borderWidth: 3,
+                            pointBackgroundColor: "#3b82f6",
+                            pointRadius: 4,
+                            backgroundColor: (context) => {
+                                const ctx = context.chart.ctx;
+                                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                                gradient.addColorStop(0, "rgba(59, 130, 246, 0.3)");
+                                gradient.addColorStop(1, "rgba(59, 130, 246, 0)");
+                                return gradient;
+                            },
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { 
+                                grid: { color: "rgba(255,255,255,0.05)" },
+                                ticks: { color: "#64748b", font: { size: 10 } } 
+                            },
+                            x: { 
+                                grid: { display: false },
+                                ticks: { color: "#64748b", font: { size: 10 } } 
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Dashboard failed to sync:", e);
+            }
+        }
+
+        loadDashboard();
+        setInterval(loadDashboard, 3000);
+    </script>
+</body>
+</html>
